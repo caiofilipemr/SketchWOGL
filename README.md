@@ -13,5 +13,5 @@ linked by target "SketchWOGL" in directory /home/me/devl/c++/game/2DGame/src
 GLUT_Xmu_LIBRARY (ADVANCED)
 linked by target "SketchWOGL" in directory /home/me/devl/c++/game/2DGame/src
 
-Instalar:
+Instalar: 
     sudo apt-get install libxmu-dev libxi-dev
