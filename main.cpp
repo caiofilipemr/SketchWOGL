@@ -1,11 +1,68 @@
 #include <stdlib.h>
 #include <GL/glut.h>
+#include <vector>
+
+struct Position {
+    float x, y, z;
+
+    Position() : x(0), y(0), z(0) {}
+
+    Position(float x, float y, float z) : x(x), y(y), z(z) { }
+};
+
+struct Polygon {
+	Position p1, p2, p3, p4;
+	
+	Polygon(Position p1, Position p2) {
+		if (p1.x == p2.x) {
+			startPlanX(p1, p2);
+		} else {
+			startPlanZ(p1, p2);
+		}
+	}
+	
+	void startPlanX(Position p1, Position p2) {
+		this->p1 = p1;
+		this->p2 = Position(p1.x, p1.y, p2.z);
+		this->p3 = p2;
+		this->p4 = Position(p2.x, p2.y, p1.z);
+	}
+	
+	void startPlanZ(Position p1, Position p2) {
+		this->p1 = p1;
+		this->p2 = Position(p2.x, p1.y, p1.z);
+		this->p3 = p2;
+		this->p4 = Position(p1.x, p2.y, p2.z);
+	}
+};
+
+const float w1 = 10, w2 = 12, h = 5;
+const float xInit = 0, yInit = 0, zInit = 0;
+
+const float espacoFinalFrente = 0.05, alturaEspacoFinalJanelaFrente = 0.2, alturaEspacoFinalSacadaFrente = 0.1;
+const float espacoJanelasFrente = 0.1, alturaEspacoJanelaFrente = 0.4;
+const float janelaFrente = 0.21, alturaJanelaFrente = 0.4;
+const float sacadaFrente = 0.26, alturaSacadaFrente = 0.8;
 
 GLsizei WIDTH = 600, HEIGHT = 600;
 GLfloat lightPosition[] = {-25.f, 0.f, 50.f, 1.f};
 
+std::vector<Polygon> paredesFrente, paredesFundo, paredesEsquerda, paredesDireita;
+
 void clearBuffers() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void drawPolygon(Polygon p, Position color) {
+    glPushMatrix();
+    glBegin(GL_POLYGON);
+    glColor3d(color.x, color.y, color.z);
+    glVertex3f(p.p1.x, p.p1.y, p.p1.z);
+    glVertex3f(p.p2.x, p.p2.y, p.p2.z);
+    glVertex3f(p.p3.x, p.p3.y, p.p3.z);
+    glVertex3f(p.p4.x, p.p4.y, p.p4.z);
+    glEnd();
+    glPopMatrix();
 }
 
 void draw() {
@@ -13,17 +70,16 @@ void draw() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    glColor3d(0, 1, 0);
 
-    glPushMatrix();
-        glBegin(GL_QUADS);
-            glVertex3f(0.0,0.0,0.0);
-            glVertex3f(5.0,0.0,0.0);
-            glVertex3f(5.0,5.0,0.0);
-            glVertex3f(0.0,5.0,0.0);
-        glEnd();
-    glPopMatrix();
+    Position color = Position(0, 1, 0);
+    for (auto p : paredesFrente) {
+        drawPolygon(p, color);
+    }
 
+    color = Position(0, 0, 1);
+    for (auto p : paredesFundo) {
+        drawPolygon(p, color);
+    }
 
     glutSwapBuffers();
 }
@@ -77,11 +133,45 @@ void defineLightConfiguration() {
     glEnable(GL_COLOR_MATERIAL);
 }
 
+void createParedeFrenteFundoPolygons(float z, std::vector<Polygon> &parede) {
+    float x[8];
+    x[0] = xInit; x[1] = x[0] + w1 * espacoFinalFrente; x[2] = x[1] + w1 * janelaFrente; x[3] = x[2] + w1 * espacoJanelasFrente;
+    x[4] = x[3] + w1 * sacadaFrente; x[5] = x[4] + w1 * espacoJanelasFrente; x[6] = x[5] + w1 * janelaFrente; x[7] = x[6] + w1 * espacoFinalFrente;
+
+    float yJan[4];
+    yJan[0] = yInit; yJan[1] = yJan[0] + h * alturaEspacoJanelaFrente; yJan[2] = yJan[1] + h * alturaJanelaFrente; yJan[3] = yJan[2] + h * alturaEspacoFinalJanelaFrente;
+
+    float ySac[4];
+    ySac[0] = yInit; ySac[1] = ySac[0] + h * alturaEspacoFinalSacadaFrente; ySac[2] = ySac[1] + h * alturaSacadaFrente; ySac[3] = ySac[2] + h * alturaEspacoFinalSacadaFrente;
+
+    parede.push_back(Polygon(Position(x[0], yInit, z), Position(x[1], yInit + h, z)));
+    parede.push_back(Polygon(Position(x[1], yJan[0], z), Position(x[2], yJan[1], z)));
+    parede.push_back(Polygon(Position(x[1], yJan[2], z), Position(x[2], yJan[3], z)));
+    parede.push_back(Polygon(Position(x[2], yInit, z), Position(x[3], yInit + h, z)));
+    parede.push_back(Polygon(Position(x[3], ySac[0], z), Position(x[4], ySac[1], z)));
+    parede.push_back(Polygon(Position(x[3], ySac[2], z), Position(x[4], ySac[3], z)));
+    parede.push_back(Polygon(Position(x[4], yInit, z), Position(x[5], yInit + h, z)));
+    parede.push_back(Polygon(Position(x[5], yJan[0], z), Position(x[6], yJan[1], z)));
+    parede.push_back(Polygon(Position(x[5], yJan[2], z), Position(x[6], yJan[3], z)));
+    parede.push_back(Polygon(Position(x[6], yInit, z), Position(x[7], yInit + h, z)));
+}
+
+void createAndarPolygons() {
+    createParedeFrenteFundoPolygons(zInit, paredesFrente);
+    createParedeFrenteFundoPolygons(zInit - w2, paredesFundo);
+}
+
+void createPolygons() {
+    createAndarPolygons();
+
+}
+
 void init() {
     defineWindowConfiguration();
     definePerspective();
     defineCallbacks();
     defineLightConfiguration();
+    createPolygons();
     glutMainLoop();
 }
 
