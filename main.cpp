@@ -2,6 +2,8 @@
 #include <GL/glut.h>
 #include <vector>
 
+#define ORTHO_SIZE 30
+
 struct Position {
     float x, y, z;
 
@@ -37,26 +39,41 @@ struct Polygon {
 };
 
 const float w1 = 10, w2 = 12, h = 5;
-const float xInit = 0, yInit = 0, zInit = 0;
+const float xInit = 0 - w1 / 2, yInit = 0, zInit = 0 + w2 / 2;
 
 const float espacoFinalFrente = 0.05, alturaEspacoFinalJanelaFrente = 0.2, alturaEspacoFinalSacadaFrente = 0.1;
 const float espacoJanelasFrente = 0.1, alturaEspacoJanelaFrente = 0.4;
 const float janelaFrente = 0.21, alturaJanelaFrente = 0.4;
-const float sacadaFrente = 0.26, alturaSacadaFrente = 0.8;
+const float sacadaFrente = 0.28, alturaSacadaFrente = 0.8;
 
-GLsizei WIDTH = 600, HEIGHT = 600;
-GLfloat lightPosition[] = {-25.f, 0.f, 50.f, 1.f};
+GLsizei WIDTH = 1000, HEIGHT = 1000;
+GLfloat lightPosition[] = {0.f, 0.f, -50.f, 1.f};
 
+GLfloat xRotation = 0;
+GLfloat yRotation = 0;
+GLfloat zRotation = 0;
+GLfloat zoom = 0;
+
+Polygon terreno = Polygon(Position(-15, 0, -15), Position(15, 0, 15));
 std::vector<Polygon> paredesFrente, paredesFundo, paredesEsquerda, paredesDireita;
 
 void clearBuffers() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void setViewAngle() {
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glTranslatef(0, 0, zoom);
+    glRotatef(xRotation, 1, 0, 0);
+    glRotatef(yRotation, 0, 1, 0);
+    glRotatef(zRotation, 0, 0, 1);
+}
+
 void drawPolygon(Polygon p, Position color) {
     glPushMatrix();
-    glBegin(GL_POLYGON);
     glColor3d(color.x, color.y, color.z);
+    glBegin(GL_POLYGON);
     glVertex3f(p.p1.x, p.p1.y, p.p1.z);
     glVertex3f(p.p2.x, p.p2.y, p.p2.z);
     glVertex3f(p.p3.x, p.p3.y, p.p3.z);
@@ -65,13 +82,19 @@ void drawPolygon(Polygon p, Position color) {
     glPopMatrix();
 }
 
+void drawTerreno(Position color) {
+    drawPolygon(terreno, color);
+}
+
 void draw() {
     clearBuffers();
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
 
+    setViewAngle();
 
     Position color = Position(0, 1, 0);
+    drawTerreno(color);
+
+    color = Position(1, 0, 0);
     for (auto p : paredesFrente) {
         drawPolygon(p, color);
     }
@@ -99,11 +122,45 @@ void mouseMove(int x, int y) {
 }
 
 static void keyboardKeys(unsigned char key, int x, int y) {
+    switch (key) {
+        case ',':
+            zRotation += 1;
+            break;
+        case '.':
+            zRotation -= 1;
+            break;
+        case '+':
+            zoom += 1;
+            break;
+        case '-':
+            zoom -= 1;
+            break;
+    }
+    glutPostRedisplay();
+}
 
+void keyboardSpecialKeys(int key, int, int) {
+    switch (key) {
+        case GLUT_KEY_LEFT:
+            yRotation -= 1;
+            break;
+        case GLUT_KEY_RIGHT:
+            yRotation += 1;
+            break;
+        case GLUT_KEY_UP:
+            xRotation -= 1;
+            break;
+        case GLUT_KEY_DOWN:
+            xRotation += 1;
+            break;
+        default:
+            break;
+    }
+    glutPostRedisplay();
 }
 
 void defineWindowConfiguration() {
-    glutInitWindowSize(600, 600);
+    glutInitWindowSize(WIDTH, HEIGHT);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE);
     glutCreateWindow("Sketch WOGL");
     glClearColor(1, 1, 1, 0);
@@ -111,7 +168,7 @@ void defineWindowConfiguration() {
 
 void definePerspective() {
     glMatrixMode(GL_PROJECTION);
-    glOrtho(-15, 15, -15, 15, -15, 15);
+    glOrtho(-ORTHO_SIZE, ORTHO_SIZE, -ORTHO_SIZE, ORTHO_SIZE, -ORTHO_SIZE, ORTHO_SIZE);
     glMatrixMode(GL_MODELVIEW);
 }
 
@@ -120,17 +177,17 @@ void defineCallbacks() {
     glutMouseFunc(mouseClick);
     glutMotionFunc(mouseMove);
     glutKeyboardFunc(keyboardKeys);
-    //glutSpecialFunc(keyboardSpecialKeys);
+    glutSpecialFunc(keyboardSpecialKeys);
 }
 
 void defineLightConfiguration() {
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-    glEnable(GL_COLOR_MATERIAL);
+//    glEnable(GL_CULL_FACE);
+//    glEnable(GL_LIGHTING);
+//    glEnable(GL_LIGHT0);
+//
+//    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+//    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+//    glEnable(GL_COLOR_MATERIAL);
 }
 
 void createParedeFrenteFundoPolygons(float z, std::vector<Polygon> &parede) {
@@ -172,6 +229,7 @@ void init() {
     defineCallbacks();
     defineLightConfiguration();
     createPolygons();
+    glEnable(GL_DEPTH_TEST);
     glutMainLoop();
 }
 
