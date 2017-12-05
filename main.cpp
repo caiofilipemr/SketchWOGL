@@ -2,31 +2,33 @@
 #include <GL/glut.h>
 
 GLsizei WIDTH = 600, HEIGHT = 600;
-GLsizei MOUSEx, MOUSEy;
-GLfloat SIDE = 1;
+GLfloat lightPosition[] = {-25.f, 0.f, 50.f, 1.f};
 
-GLfloat RED[3] = {1,0,0};
-GLfloat GREEN[3] = {0,1,0};
-GLfloat BLUE[3] = {0,0,1};
-GLfloat WHITE[3] = {1,1,1};
-GLfloat BLACK[3] = {0,0,0};
-GLfloat YELLOW[3] = {1,1,0};
-GLfloat CYAN[3] = {0,1,1};
-GLfloat MAGENTA[3] = {1,0,1};
+void clearBuffers() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
 
-void display (void) {
-    glClearColor(1.0,1.0,1.0,0.0);
-    glClear(GL_COLOR_BUFFER_BIT);
+void draw() {
+    clearBuffers();
+    glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glTranslatef(-0.5, -0.5, 0.0);
-    glFlush();
+
+    glColor3d(0, 1, 0);
+
+    glPushMatrix();
+        glBegin(GL_QUADS);
+            glVertex3f(0.0,0.0,0.0);
+            glVertex3f(5.0,0.0,0.0);
+            glVertex3f(5.0,5.0,0.0);
+            glVertex3f(0.0,5.0,0.0);
+        glEnd();
+    glPopMatrix();
+
+
+    glutSwapBuffers();
 }
 
-void drawPoint(int x, int y) {
-
-}
-
-void mouse(int btn, int state, int x, int y)
+void mouseClick(int btn, int state, int x, int y)
 {
     if(btn==GLUT_LEFT_BUTTON && state==GLUT_DOWN) {
 
@@ -36,14 +38,55 @@ void mouse(int btn, int state, int x, int y)
     }
 }
 
-int main (int argc, char **argv) {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-    glutInitWindowSize(WIDTH, HEIGHT);
-    glutInitWindowPosition(10, 10);
-    glutCreateWindow("New Window");
-    glutDisplayFunc(display);
-    glutMouseFunc(mouse);
+void mouseMove(int x, int y) {
+
+}
+
+static void keyboardKeys(unsigned char key, int x, int y) {
+
+}
+
+void defineWindowConfiguration() {
+    glutInitWindowSize(600, 600);
+    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE);
+    glutCreateWindow("Sketch WOGL");
+    glClearColor(1, 1, 1, 0);
+}
+
+void definePerspective() {
+    glMatrixMode(GL_PROJECTION);
+    glOrtho(-15, 15, -15, 15, -15, 15);
+    glMatrixMode(GL_MODELVIEW);
+}
+
+void defineCallbacks() {
+    glutDisplayFunc(draw);
+    glutMouseFunc(mouseClick);
+    glutMotionFunc(mouseMove);
+    glutKeyboardFunc(keyboardKeys);
+    //glutSpecialFunc(keyboardSpecialKeys);
+}
+
+void defineLightConfiguration() {
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+    glEnable(GL_COLOR_MATERIAL);
+}
+
+void init() {
+    defineWindowConfiguration();
+    definePerspective();
+    defineCallbacks();
+    defineLightConfiguration();
     glutMainLoop();
+}
+
+int main(int argc, char **argv) {
+    glutInit(&argc, argv);
+    init();
     return 0;
 }
