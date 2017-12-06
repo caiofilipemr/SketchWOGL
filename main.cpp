@@ -2,8 +2,8 @@
 #include <GL/glut.h>
 #include <vector>
 
-#define ORTHO_SIZE 30
-#define N_ANDARES 2
+#define ORTHO_SIZE 70
+#define N_ANDARES 10
 
 struct Position {
     float x, y, z, a;
@@ -168,12 +168,9 @@ void drawTerreo() {
     Position c1 = Position(0.2, 0.2, 0.2), c2 = Position(0.8, 0.8, 0.8);
     for (int i = 0; i < w1; i = i + 2) {
         for (int j = 0; j < w2; j = j + 2) {
-            if (b) {
-                drawPolygon(Polygon(Position(xInit + i, yInit + 0.001f, zInit - j), Position(xInit + i + 2, yInit + 0.001f, zInit - (j + 2))), c1, 1);
-            } else {
-                drawPolygon(Polygon(Position(xInit + i, yInit + 0.001f, zInit - j), Position(xInit + i + 2, yInit + 0.001f, zInit - (j + 2))), c2, 1);
-            }
-
+            drawPolygon(Polygon(Position(xInit + i, yInit + 0.001f, zInit - j),
+                                Position(xInit + i + 2, yInit + 0.001f, zInit - (j + 2))),
+                        b ? c1 : c2, 1);
             b = !b;
         }
     }
