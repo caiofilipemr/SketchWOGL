@@ -5,11 +5,12 @@
 #define ORTHO_SIZE 30
 
 struct Position {
-    float x, y, z;
+    float x, y, z, a;
 
-    Position() : x(0), y(0), z(0) {}
+    Position() : x(0), y(0), z(0), a(0) {}
 
-    Position(float x, float y, float z) : x(x), y(y), z(z) { }
+    Position(float x, float y, float z) : x(x), y(y), z(z), a(0) { }
+    Position(float x, float y, float z, float a) : x(x), y(y), z(z), a(a) { }
 };
 
 struct Polygon {
@@ -47,10 +48,9 @@ const float janelaFrente = 0.21, alturaJanelaFrente = 0.4;
 const float sacadaFrente = 0.28, alturaSacadaFrente = 0.8;
 
 GLsizei WIDTH = 1000, HEIGHT = 1000;
-GLfloat lightPosition[] = {0.f, 0.f, -50.f, 1.f};
 
-GLfloat xRotation = 0;
-GLfloat yRotation = 0;
+GLfloat xRotation = 15;
+GLfloat yRotation = 15;
 GLfloat zRotation = 0;
 GLfloat zoom = 0;
 
@@ -72,7 +72,7 @@ void setViewAngle() {
 
 void drawPolygon(Polygon p, Position color) {
     glPushMatrix();
-    glColor3d(color.x, color.y, color.z);
+    glColor4d(color.x, color.y, color.z, color.a);
     glBegin(GL_POLYGON);
     glVertex3f(p.p1.x, p.p1.y, p.p1.z);
     glVertex3f(p.p2.x, p.p2.y, p.p2.z);
@@ -91,18 +91,20 @@ void draw() {
 
     setViewAngle();
 
-    Position color = Position(0, 1, 0);
+    Position color = Position(0, 1, 0, 1);
     drawTerreno(color);
 
-    color = Position(1, 0, 0);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    color = Position(0.9, 0.8, 0.8, 1);
     for (auto p : paredesFrente) {
         drawPolygon(p, color);
     }
 
-    color = Position(0, 0, 1);
     for (auto p : paredesFundo) {
         drawPolygon(p, color);
     }
+    glDisable(GL_BLEND);
 
     glutSwapBuffers();
 }
@@ -163,7 +165,7 @@ void defineWindowConfiguration() {
     glutInitWindowSize(WIDTH, HEIGHT);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE);
     glutCreateWindow("Sketch WOGL");
-    glClearColor(1, 1, 1, 0);
+    glClearColor(0.2, 0.2, 0.5, 0);
 }
 
 void definePerspective() {
@@ -181,13 +183,33 @@ void defineCallbacks() {
 }
 
 void defineLightConfiguration() {
-//    glEnable(GL_CULL_FACE);
-//    glEnable(GL_LIGHTING);
-//    glEnable(GL_LIGHT0);
-//
-//    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-//    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-//    glEnable(GL_COLOR_MATERIAL);
+    GLfloat luzAmbiente[4]={0.2,0.2,0.2,1.0};
+    GLfloat luzDifusa[4]={0.7,0.7,0.7,1.0};// "cor"
+    GLfloat luzEspecular[4]={1.0, 1.0, 1.0, 1.0};// "brilho"
+    GLfloat posicaoLuz[4]={0.0, 50.0, 50.0, 1.0};
+
+    GLfloat especularidade[4]={1.0,1.0,1.0,1.0};
+    GLint especMaterial = 60;
+    // Define a refletância do material
+    glMaterialfv(GL_FRONT,GL_SPECULAR, especularidade);
+    // Define a concentração do brilho
+    glMateriali(GL_FRONT,GL_SHININESS,especMaterial);
+    // Ativa o uso da luz ambiente
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzAmbiente);
+    // Define os parâmetros da luz de número 0
+    glLightfv(GL_LIGHT0, GL_AMBIENT, luzAmbiente);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, luzDifusa );
+    glLightfv(GL_LIGHT0, GL_SPECULAR, luzEspecular );
+    glLightfv(GL_LIGHT0, GL_POSITION, posicaoLuz );
+
+    //Habilita a definição da cor do material a partir da cor corrente
+    glEnable(GL_COLOR_MATERIAL);
+    //Habilita o uso de iluminação
+    glEnable(GL_LIGHTING);
+    //Habilita a luz de número 0
+    glEnable(GL_LIGHT0);
+    //Habilita o modelo de colorização de Gouraud
+    glShadeModel(GL_SMOOTH);
 }
 
 void createParedeFrenteFundoPolygons(float z, std::vector<Polygon> &parede) {
@@ -213,9 +235,15 @@ void createParedeFrenteFundoPolygons(float z, std::vector<Polygon> &parede) {
     parede.push_back(Polygon(Position(x[6], yInit, z), Position(x[7], yInit + h, z)));
 }
 
+void createParedeLadoPolygons(float d, std::vector<Polygon> vector) {
+
+}
+
 void createAndarPolygons() {
     createParedeFrenteFundoPolygons(zInit, paredesFrente);
     createParedeFrenteFundoPolygons(zInit - w2, paredesFundo);
+    createParedeLadoPolygons(xInit, paredesEsquerda);
+    createParedeLadoPolygons(xInit + w1, paredesDireita);
 }
 
 void createPolygons() {
@@ -230,6 +258,7 @@ void init() {
     defineLightConfiguration();
     createPolygons();
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND_DST_ALPHA);
     glutMainLoop();
 }
 
