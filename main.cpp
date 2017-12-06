@@ -2,8 +2,8 @@
 #include <GL/glut.h>
 #include <vector>
 
-#define ORTHO_SIZE 70
-#define N_ANDARES 10
+#define ORTHO_SIZE 35
+#define N_ANDARES 4
 
 struct Position {
     float x, y, z, a;
@@ -69,7 +69,7 @@ Polygon terreno = Polygon(Position(-terrenoSize, 0, -terrenoSize), Position(terr
 Polygon piso;
 std::vector<Polygon> paredesFrente, paredesFundo, paredesEsquerda, paredesDireita, heliporto;
 std::vector<Polygon> janelasFrente, janelasFundo, janelasEsquerda, janelasDireita;
-std::vector<Polygon> paredesFrenteTerreo, paredesFundoTerreo, paredesEsquerdaTerreo, paredesDireitaTerreo;
+std::vector<Polygon> paredesFrenteTerreo, paredesFundoTerreo, paredesEsquerdaTerreo, paredesDireitaTerreo, portasFrenteTerreo;
 
 void clearBuffers() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -150,9 +150,13 @@ void drawTransparentes() {
 
 void drawTerreo() {
     Position color = Position(0.9, 0.8, 0.8, 1);
+    Position colorPorta = Position(0.6, 0.4, 0.2);
 
     for (auto p : paredesFrenteTerreo) {
         drawPolygon(p, color);
+    }
+    for (auto p : portasFrenteTerreo) {
+        drawPolygon(p, colorPorta);
     }
     for (auto p : paredesFundoTerreo) {
         drawPolygon(p, color);
@@ -278,7 +282,7 @@ void defineCallbacks() {
 }
 
 void defineLightConfiguration() {
-    GLfloat luzAmbiente[4]={0.2,0.2,0.2,1.0};
+    GLfloat luzAmbiente[4]={0.3,0.3,0.3,1.0};
     GLfloat luzDifusa[4]={0.7,0.7,0.7,1.0};// "cor"
     GLfloat luzEspecular[4]={1.0, 1.0, 1.0, 1.0};// "brilho"
     GLfloat posicaoLuz[4]={0.0, 50.0, 50.0, 1.0};
@@ -307,7 +311,7 @@ void defineLightConfiguration() {
     glShadeModel(GL_SMOOTH);
 }
 
-void createParedeFrenteTerreoPolygons(std::vector<Polygon> &parede) {
+void createParedeFrenteTerreoPolygons(std::vector<Polygon> &parede, std::vector<Polygon> &porta) {
     float x[4];
     x[0] = xInit;
     x[1] = x[0] + w1 * 0.3f;
@@ -317,16 +321,19 @@ void createParedeFrenteTerreoPolygons(std::vector<Polygon> &parede) {
     parede.push_back(Polygon(Position(x[0], yInit, zInit), Position(x[1], yInit + h, zInit)));
     parede.push_back(Polygon(Position(x[1], yInit + h * 0.7f, zInit), Position(x[2], yInit + h, zInit)));
     parede.push_back(Polygon(Position(x[2], yInit, zInit), Position(x[3], yInit + h, zInit)));
+
+    porta.push_back(Polygon(Position(x[1], yInit, zInit), Position(x[1], yInit + h * 0.7f, zInit + 2)));
+    porta.push_back(Polygon(Position(x[2], yInit, zInit), Position(x[2], yInit + h * 0.7f, zInit + 2)));
 }
 
 void createTerreo() {
-    createParedeFrenteTerreoPolygons(paredesFrenteTerreo);
+    createParedeFrenteTerreoPolygons(paredesFrenteTerreo, portasFrenteTerreo);
     paredesFundoTerreo.push_back(Polygon(Position(xInit, yInit, zInit - w2), Position(xInit + w1, yInit + h, zInit - w2)));
     paredesEsquerdaTerreo.push_back(Polygon(Position(xInit, yInit, zInit), Position(xInit, yInit + h, zInit - w2)));
     paredesDireitaTerreo.push_back(Polygon(Position(xInit + w1, yInit, zInit), Position(xInit + w1, yInit + h, zInit - w2)));
 }
 
-void createParedeFrenteFundoPolygons(float z, std::vector<Polygon> &parede, std::vector<Polygon> &vidros) {
+void createParedeFrenteFundoPolygons(float z, float zSac, std::vector<Polygon> &parede, std::vector<Polygon> &vidros) {
     float x[8];
     x[0] = xInit; x[1] = x[0] + w1 * espacoFinalFrente; x[2] = x[1] + w1 * janelaFrente;
     x[3] = x[2] + w1 * espacoJanelasFrente; x[4] = x[3] + w1 * sacadaFrente; x[5] = x[4] + w1 * espacoJanelasFrente;
@@ -351,9 +358,16 @@ void createParedeFrenteFundoPolygons(float z, std::vector<Polygon> &parede, std:
     parede.push_back(Polygon(Position(x[5], yJan[2], z), Position(x[6], yJan[3], z)));
     parede.push_back(Polygon(Position(x[6], yInit, z), Position(x[7], yInit + h, z)));
 
+    parede.push_back(Polygon(Position(x[3], ySac[1], z), Position(x[4], ySac[1], z + zSac)));
+    parede.push_back(Polygon(Position(x[3], ySac[1] + h * 0.4f * alturaSacadaFrente, z + zSac), Position(x[4], ySac[1] + h * 0.1f + h * 0.4f * alturaSacadaFrente, z + zSac)));
+    parede.push_back(Polygon(Position(x[3], ySac[1] + h * 0.4f * alturaSacadaFrente, z), Position(x[3], ySac[1] + h * 0.1f + h * 0.4f * alturaSacadaFrente, z + zSac)));
+    parede.push_back(Polygon(Position(x[4], ySac[1] + h * 0.4f * alturaSacadaFrente, z), Position(x[4], ySac[1] + h * 0.1f + h * 0.4f * alturaSacadaFrente, z + zSac)));
+
     vidros.push_back(Polygon(Position(x[1], yJan[1], z), Position(x[2], yJan[2], z)));
     vidros.push_back(Polygon(Position(x[5], yJan[1], z), Position(x[6], yJan[2], z)));
-    vidros.push_back(Polygon(Position(x[3], ySac[1], z), Position(x[4], ySac[1] + h * 0.4f * alturaSacadaFrente, z)));
+    vidros.push_back(Polygon(Position(x[3], ySac[1], z + zSac), Position(x[4], ySac[1] + h * 0.4f * alturaSacadaFrente, z + zSac)));
+    vidros.push_back(Polygon(Position(x[3], ySac[1], z), Position(x[3], ySac[1] + h * 0.4f * alturaSacadaFrente, z + zSac)));
+    vidros.push_back(Polygon(Position(x[4], ySac[1], z), Position(x[4], ySac[1] + h * 0.4f * alturaSacadaFrente, z + zSac)));
 }
 
 void createParedeLadoPolygons(float x, std::vector<Polygon> &parede, std::vector<Polygon> &vidros) {
@@ -384,6 +398,9 @@ void createParedeLadoPolygons(float x, std::vector<Polygon> &parede, std::vector
     parede.push_back(Polygon(Position(x, yJan[2], z[7]), Position(x, yJan[3], z[8])));
     parede.push_back(Polygon(Position(x, yInit, z[8]), Position(x, yInit + h, z[9])));
 
+    parede.push_back(Polygon(Position(x, yJan[1], z[1] + (z[2] - z[1]) / 2 - w2 * 0.005f), Position(x, yJan[2], z[1] + (z[2] - z[1]) / 2 + w2 * 0.005f)));
+    parede.push_back(Polygon(Position(x, yJan[1], z[7] + (z[8] - z[7]) / 2 - w2 * 0.005f), Position(x, yJan[2], z[7] + (z[8] - z[7]) / 2 + w2 * 0.005f)));
+
     vidros.push_back(Polygon(Position(x, yJan[1], z[1]), Position(x, yJan[2], z[2])));
     vidros.push_back(Polygon(Position(x, yJan[1], z[7]), Position(x, yJan[2], z[8])));
     vidros.push_back(Polygon(Position(x, yBan[1], z[3]), Position(x, yBan[2], z[4])));
@@ -391,8 +408,8 @@ void createParedeLadoPolygons(float x, std::vector<Polygon> &parede, std::vector
 }
 
 void createAndarPolygons() {
-    createParedeFrenteFundoPolygons(zInit, paredesFrente, janelasFrente);
-    createParedeFrenteFundoPolygons(zInit - w2, paredesFundo, janelasFundo);
+    createParedeFrenteFundoPolygons(zInit, w2 * 0.1f, paredesFrente, janelasFrente);
+    createParedeFrenteFundoPolygons(zInit - w2, -w2 * 0.1f, paredesFundo, janelasFundo);
     createParedeLadoPolygons(xInit, paredesEsquerda, janelasEsquerda);
     createParedeLadoPolygons(xInit + w1, paredesDireita, janelasDireita);
     piso = Polygon(Position(xInit, yInit + 0.001f, zInit), Position(xInit + w1, yInit + 0.001f, zInit - w2));
